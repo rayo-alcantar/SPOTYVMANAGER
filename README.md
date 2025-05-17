@@ -17,4 +17,19 @@ Este proyecto es una aplicación de escritorio en Python que te ayuda a gestiona
 ---
 
 ## 📁 Estructura de carpetas
-
+SPOTYVMANAGER/
+│
+├── src/
+│ ├── main.py # Punto de entrada principal
+│ ├── auth.py # Autenticación con Spotify
+│ ├── ui/
+│ │ ├── main_window.py # Menú principal
+│ │ ├── playlists.py # Ventanas de gestión de playlists
+│ │ ├── podcasts.py # Ventana de sincronización de podcasts
+│ │ ├── artist_manager.py # Ventana de gestor automático
+│ │ ├── search_advanced.py # Ventana de búsqueda avanzada
+│ │ └── top_tracks.py # Ventana de top de canciones
+│
+├── .env
+├── requirements.txt # Dependencias
+└── README.md # Este archivo
