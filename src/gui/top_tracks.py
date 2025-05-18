@@ -1,17 +1,13 @@
-# src/gui/top_tracks.py
-"""
-Ventana Top Tracks Mejorado en wxPython: busca un artista, filtra y crea playlist.
-"""
-
 import wx
 from spotipy import Spotify
 
 class VentanaTopTracks(wx.Frame):
 	"""
-	Ventana para buscar top tracks de un artista, aplicar filtros avanzados y crear playlist personalizada.
+	Ventana para buscar top tracks de un artista, aplicar filtros avanzados y crear playlist personalizada,
+	cumpliendo con criterios de accesibilidad.
 	"""
 	def __init__(self, parent: wx.Window, sp: Spotify):
-		super().__init__(parent, title="Top Tracks Mejorado", size=(450, 550))
+		super().__init__(parent, title="Top Tracks Mejorado", size=(480, 620))
 		self.sp = sp
 		self.uris = []
 
@@ -19,65 +15,105 @@ class VentanaTopTracks(wx.Frame):
 		main_sizer = wx.BoxSizer(wx.VERTICAL)
 		panel.SetSizer(main_sizer)
 
+		# Artista
 		main_sizer.Add(wx.StaticText(panel, label="Artista:"), 0, wx.TOP | wx.LEFT, 10)
-		self.e_art = wx.TextCtrl(panel, size=(320, 44))
+		self.e_art = wx.TextCtrl(panel, size=(340, 44), name="Artista")
 		main_sizer.Add(self.e_art, 0, wx.ALL, 5)
 
+		# Cuántos tracks
 		main_sizer.Add(wx.StaticText(panel, label="Cuántos tracks (1–50):"), 0, wx.TOP | wx.LEFT, 5)
-		self.e_num = wx.TextCtrl(panel, value="10", size=(60, 44))
+		self.e_num = wx.TextCtrl(panel, value="10", size=(60, 44), name="Cantidad de tracks")
 		main_sizer.Add(self.e_num, 0, wx.ALL, 5)
 
+		# Popularidad mínima
 		main_sizer.Add(wx.StaticText(panel, label="Popularidad mínima (0–100):"), 0, wx.TOP | wx.LEFT, 5)
-		self.e_pop = wx.TextCtrl(panel, value="0", size=(60, 44))
+		self.e_pop = wx.TextCtrl(panel, value="0", size=(60, 44), name="Popularidad mínima")
 		main_sizer.Add(self.e_pop, 0, wx.ALL, 5)
 
+		# Colaboraciones
 		main_sizer.Add(wx.StaticText(panel, label="Colaboraciones:"), 0, wx.TOP | wx.LEFT, 5)
-		self.coll_var = wx.RadioBox(panel, choices=["Todas", "Solo artista", "Solo colaboraciones"], style=wx.RA_SPECIFY_ROWS)
+		self.coll_var = wx.RadioBox(panel, choices=["Todas", "Solo artista", "Solo colaboraciones"], style=wx.RA_SPECIFY_ROWS, name="Colaboraciones")
 		self.coll_var.SetSelection(0)
 		main_sizer.Add(self.coll_var, 0, wx.ALL, 5)
 
+		# Géneros secundarios
 		main_sizer.Add(wx.StaticText(panel, label="Géneros secundarios (sep. coma):"), 0, wx.TOP | wx.LEFT, 5)
-		self.e_gen = wx.TextCtrl(panel, size=(320, 44))
+		self.e_gen = wx.TextCtrl(panel, size=(340, 44), name="Géneros secundarios")
 		main_sizer.Add(self.e_gen, 0, wx.ALL, 5)
 
+		# Ordenar por
 		main_sizer.Add(wx.StaticText(panel, label="Ordenar por:"), 0, wx.TOP | wx.LEFT, 5)
-		self.order_var = wx.Choice(panel, choices=["Popularidad", "Nombre", "Fecha"])
+		self.order_var = wx.Choice(panel, choices=["Popularidad", "Nombre", "Fecha"], name="Ordenar por")
 		self.order_var.SetSelection(0)
 		main_sizer.Add(self.order_var, 0, wx.ALL, 5)
 
+		# Área de resultados accesible
 		main_sizer.Add(wx.StaticText(panel, label="Resultados:"), 0, wx.TOP | wx.LEFT, 10)
-		self.text_area = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_WORDWRAP)
-		self.text_area.SetMinSize((400, 160))
+		self.text_area = wx.TextCtrl(
+			panel, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_WORDWRAP, name="Resultados"
+		)
+		self.text_area.SetMinSize((420, 180))
 		main_sizer.Add(self.text_area, 1, wx.ALL | wx.EXPAND, 10)
 
+		# Barra de estado
+		self.status = wx.StaticText(panel, label="Listo")
+		self.status.SetMinSize((220, 32))
+		main_sizer.Add(self.status, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+
+		# Botones
 		btns = wx.BoxSizer(wx.HORIZONTAL)
-		btn_buscar = wx.Button(panel, label="Buscar")
+		btn_buscar = wx.Button(panel, label="&Buscar")
 		btn_buscar.Bind(wx.EVT_BUTTON, self.buscar_y_mostrar)
-		btns.Add(btn_buscar, 0, wx.ALL, 5)
-		btn_crear = wx.Button(panel, label="Crear Playlist")
+		btn_buscar.SetMinSize((150, 44))
+		btns.Add(btn_buscar, 0, wx.ALL, 6)
+
+		btn_crear = wx.Button(panel, label="&Crear Playlist")
 		btn_crear.Bind(wx.EVT_BUTTON, self.crear_playlist_top)
-		btns.Add(btn_crear, 0, wx.ALL, 5)
+		btn_crear.SetMinSize((150, 44))
+		btns.Add(btn_crear, 0, wx.ALL, 6)
+
+		btn_cancelar = wx.Button(panel, label="&Cancelar")
+		btn_cancelar.Bind(wx.EVT_BUTTON, lambda evt: self.Close())
+		btn_cancelar.SetMinSize((120, 44))
+		btns.Add(btn_cancelar, 0, wx.ALL, 6)
+
 		main_sizer.Add(btns, 0, wx.ALIGN_CENTER)
 
 		panel.Layout()
 		self.Centre()
 		self.Show()
 
+		# Foco inicial y accesibilidad: campo artista
+		self.e_art.SetFocus()
+
+		# Escape para cerrar
+		panel.Bind(wx.EVT_CHAR_HOOK, self.on_key_down)
+
+	def on_key_down(self, evt):
+		if evt.GetKeyCode() == wx.WXK_ESCAPE:
+			self.Close()
+		else:
+			evt.Skip()
+
 	def buscar_y_mostrar(self, _evt):
 		self.text_area.SetValue("")
+		self.status.SetLabel("Buscando…")
 		nombre = self.e_art.GetValue().strip()
 		if not nombre:
 			wx.MessageBox("Pon el nombre del artista.", "Atención", wx.OK | wx.ICON_WARNING)
+			self.status.SetLabel("Falta el nombre del artista")
 			return
 
 		try:
 			arts = self.sp.search(q=nombre, type="artist", limit=1)["artists"]["items"]
 			if not arts:
 				wx.MessageBox("Artista no encontrado.", "Info", wx.OK | wx.ICON_INFORMATION)
+				self.status.SetLabel("Artista no encontrado")
 				return
 			art = arts[0]
 		except Exception as e:
 			wx.MessageBox(f"No pude buscar artista:\n{e}", "Error", wx.OK | wx.ICON_ERROR)
+			self.status.SetLabel("Error al buscar artista")
 			return
 
 		album_ids = set(); offset = 0
@@ -102,6 +138,7 @@ class VentanaTopTracks(wx.Frame):
 
 		if not raw_tracks:
 			wx.MessageBox("No hay pistas disponibles.", "Info", wx.OK | wx.ICON_INFORMATION)
+			self.status.SetLabel("No hay pistas")
 			return
 
 		seen = set(); uniq = []
@@ -154,6 +191,7 @@ class VentanaTopTracks(wx.Frame):
 		for i, t in enumerate(resultados, 1):
 			artistas = ", ".join(a["name"] for a in t["artists"])
 			self.text_area.AppendText(f"{i}. {t['name']} — {artistas} (pop {t['popularity']})\n")
+		self.status.SetLabel(f"Mostrando {len(resultados)} resultados")
 
 	def crear_playlist_top(self, _evt):
 		uris = self.uris
@@ -179,6 +217,6 @@ class VentanaTopTracks(wx.Frame):
 
 def ventana_top_tracks(sp: Spotify, parent: wx.Window):
 	"""
-	Lanza la ventana Top Tracks Mejorado.
+	Lanza la ventana Top Tracks Mejorado accesible.
 	"""
 	VentanaTopTracks(parent, sp)
